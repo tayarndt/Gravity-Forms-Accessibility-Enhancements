@@ -22,8 +22,6 @@ function gf_accessibility_enqueue_scripts($hook) {
 }
 add_action('admin_enqueue_scripts', 'gf_accessibility_enqueue_scripts');
 
-// ... [Your initial plugin information and other function definitions remain unchanged]
-
 // Check if Gravity Forms is active
 if (class_exists('GFForms')) {
     add_action('admin_menu', 'gf_accessibility_add_menu');
@@ -42,7 +40,8 @@ if (class_exists('GFForms')) {
 
     function gf_accessibility_render_submenu() {
         $forms = GFAPI::get_forms();
-        $selected_form_id = isset($_POST['selected_form_id']) ? intval($_POST['selected_form_id']) : $forms[0]['id'];
+        $selected_form_id = isset($_POST['selected_form_id']) ? absint($_POST['selected_form_id']) : $forms[0]['id'];
+
         $selected_form = GFAPI::get_form($selected_form_id);
 
         echo '<div class="wrap">';
@@ -90,10 +89,11 @@ function gf_reorder_fields($form, $order) {
 
 if (isset($_POST['gf_reorder_fields'])) {
     // Retrieve the submitted order from POST data
-    $order = explode(',', sanitize_text_field($_POST['field_order']));
+    $order = explode(',', $_POST['field_order']);
+    $order = array_map('sanitize_text_field', $order);  
     
     // Get the selected form
-    $selected_form_id = intval($_POST['selected_form_id']);
+    $selected_form_id = absint($_POST['selected_form_id']);  
     $form = GFAPI::get_form($selected_form_id);
     
     // Reorder the fields
