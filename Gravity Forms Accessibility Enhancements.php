@@ -18,7 +18,8 @@ if (!defined('ABSPATH')) {
 // Enqueue our JavaScript
 function gf_accessibility_enqueue_scripts($hook) {
     if ('toplevel_page_gf_accessibility' !== $hook) return;
-    wp_enqueue_script('gf-accessibility-js', plugin_dir_url(__FILE__) . 'js/accessibility.js', array('jquery'), '1.0.0', true);
+    wp_enqueue_script('gf-accessibility-js', plugin_dir_url(__FILE__) . 'js/accessibility.js', [], '1.0.0', true);
+    wp_localize_script('gf-accessibility-js', 'gf_accessibility', ['ajax_url' => admin_url('admin-ajax.php')]);
 }
 add_action('admin_enqueue_scripts', 'gf_accessibility_enqueue_scripts');
 
@@ -41,7 +42,6 @@ if (class_exists('GFForms')) {
     function gf_accessibility_render_submenu() {
         $forms = GFAPI::get_forms();
         $selected_form_id = isset($_POST['selected_form_id']) ? absint($_POST['selected_form_id']) : $forms[0]['id'];
-
         $selected_form = GFAPI::get_form($selected_form_id);
 
         echo '<div class="wrap">';
@@ -71,44 +71,52 @@ if (class_exists('GFForms')) {
         echo '</form>';
         echo '</div>';
     }
-}
 
-function gf_reorder_fields($form, $order) {
-    $new_fields = [];
-    foreach ($order as $field_id) {
-        foreach ($form['fields'] as $field) {
-            if ($field->id == $field_id) {
-                $new_fields[] = $field;
-                break;
+    function gf_reorder_fields($form, $order) {
+        $new_fields = [];
+        foreach ($order as $field_id) {
+            foreach ($form['fields'] as $field) {
+                if ($field->id == $field_id) {
+                    $new_fields[] = $field;
+                    break;
+                }
             }
         }
+        $form['fields'] = $new_fields;
+        return $form;
     }
-    $form['fields'] = $new_fields;
-    return $form;
-}
 
-if (isset($_POST['gf_reorder_fields'])) {
-    // Retrieve the submitted order from POST data
-    $order = explode(',', $_POST['field_order']);
-    $order = array_map('sanitize_text_field', $order);  
-    
-    // Get the selected form
-    $selected_form_id = absint($_POST['selected_form_id']);  
-    $form = GFAPI::get_form($selected_form_id);
-    
-    // Reorder the fields
-    $updated_form = gf_reorder_fields($form, $order);
-    
-    // Update the form using GFAPI
-    $result = GFAPI::update_form($updated_form);
-    
-    if (is_wp_error($result)) {
-        echo '<div class="notice notice-error">';
-        echo '<p>Error saving form. ' . $result->get_error_message() . '</p>';
-        echo '</div>';
-    } else {
-        echo '<div class="notice notice-success">';
-        echo '<p>Form saved successfully!</p>';
-        echo '</div>';
+    if (isset($_POST['gf_reorder_fields'])) {
+        $order = explode(',', $_POST['field_order']);
+        $order = array_map('sanitize_text_field', $order);  // Use array_map() for sanitizing
+
+        $selected_form_id = absint($_POST['selected_form_id']);
+        $form = GFAPI::get_form($selected_form_id);
+
+        $updated_form = gf_reorder_fields($form, $order);
+
+        $result = GFAPI::update_form($updated_form);
+        
+        if (is_wp_error($result)) {
+            echo '<div class="notice notice-error">';
+            echo '<p>Error saving form. ' . $result->get_error_message() . '</p>';
+            echo '</div>';
+        } else {
+            echo '<div class="notice notice-success">';
+            echo '<p>Form saved successfully!</p>';
+            echo '</div>';
+        }
+    }
+
+    add_action('wp_ajax_fetch_form_fields', 'gf_accessibility_fetch_form_fields');
+    function gf_accessibility_fetch_form_fields() {
+        $form_id = absint($_POST['form_id']);
+        $form = GFAPI::get_form($form_id);
+
+        if ($form) {
+            wp_send_json_success($form['fields']);
+        } else {
+            wp_send_json_error('Form not found.');
+        }
     }
 }
