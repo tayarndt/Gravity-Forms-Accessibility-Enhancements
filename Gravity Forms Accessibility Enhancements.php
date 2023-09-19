@@ -12,7 +12,7 @@
  * Text Domain: gf-accessibility-enhancements
  */
 
-if (!defined('ABSPATH')) {
+ if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
 
@@ -100,7 +100,7 @@ if (class_exists('GFForms')) {
 
     if (isset($_POST['gf_reorder_fields'])) {
         $order = explode(',', $_POST['field_order']);
-        $order = array_map('sanitize_text_field', $order);  // Use array_map() for sanitizing
+        $order = array_map('sanitize_text_field', $order);
 
         $selected_form_id = absint($_POST['selected_form_id']);
         $form = GFAPI::get_form($selected_form_id);
@@ -126,7 +126,14 @@ if (class_exists('GFForms')) {
         $form = GFAPI::get_form($form_id);
 
         if ($form) {
-            wp_send_json_success($form['fields']);
+            $fields = [];
+            foreach ($form['fields'] as $field) {
+                $label = isset($field['label']) ? $field['label'] : '';
+                $type = isset($field['type']) ? $field['type'] : '';
+                $field['formatted_label'] = "{$label} ({$type})";  // This adds (type) to each field label
+                $fields[] = $field;
+            }
+            wp_send_json_success($fields);
         } else {
             wp_send_json_error('Form not found.');
         }

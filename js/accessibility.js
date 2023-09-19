@@ -35,11 +35,11 @@ document.addEventListener("DOMContentLoaded", function() {
         clearDropdown(field2Dropdown);
         
         fields.forEach(function(field) {
+            const optionLabel = `${field.label} (${field.type})`;
             const option1 = document.createElement("option");
             option1.value = field.id;
-            option1.textContent = field.label;
+            option1.textContent = optionLabel;
             field1Dropdown.appendChild(option1);
-
             const option2 = option1.cloneNode(true);
             field2Dropdown.appendChild(option2);
         });
@@ -57,11 +57,36 @@ document.addEventListener("DOMContentLoaded", function() {
         }
 
         fields.forEach(function(field) {
+            const liLabel = `${field.label} (${field.type})`;
             const li = document.createElement("li");
             li.dataset.id = field.id;
-            li.textContent = field.label;
+            li.textContent = liLabel;
             reorderFieldsList.appendChild(li);
         });
+
+        updateFieldOrderInput();
+    }
+
+    function moveFields(direction) {
+        const field1 = document.getElementById('gf_field_1_dropdown').value;
+        const field2 = document.getElementById('gf_field_2_dropdown').value;
+        
+        const field1Li = Array.from(reorderFieldsList.children).find(li => li.dataset.id === field1);
+        const field2Li = Array.from(reorderFieldsList.children).find(li => li.dataset.id === field2);
+
+        if (!field1Li || !field2Li) {
+            return;
+        }
+
+        if (direction === 'above') {
+            reorderFieldsList.insertBefore(field1Li, field2Li);
+        } else if (direction === 'below') {
+            if (field2Li.nextSibling) {
+                reorderFieldsList.insertBefore(field1Li, field2Li.nextSibling);
+            } else {
+                reorderFieldsList.appendChild(field1Li);
+            }
+        }
 
         updateFieldOrderInput();
     }
@@ -78,16 +103,6 @@ document.addEventListener("DOMContentLoaded", function() {
     document.getElementById('move_below_btn').addEventListener('click', function() {
         moveFields('below');
     });
-
-    function moveFields(direction) {
-        const field1 = document.getElementById('gf_field_1_dropdown').value;
-        const field2 = document.getElementById('gf_field_2_dropdown').value;
-        
-        // Logic to move fields and updateOrderPreview() again.
-        // (You'll need to expand on this as per your requirements)
-
-        updateFieldOrderInput();
-    }
 
     // Initial fetch to populate the fields on page load
     if (formDropdown.value) {
