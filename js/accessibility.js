@@ -1,78 +1,96 @@
 document.addEventListener("DOMContentLoaded", function() {
-    let reorderFieldsList = document.getElementById('reorderFieldsList');
-    let fieldOrderInput = document.getElementById('field_order_input');
-    let formsDropdown = document.getElementById('gf_forms_dropdown');
 
-    // Function to update the hidden input with the current order of fields
-    function updateFieldOrder() {
-        let order = Array.from(reorderFieldsList.children).map(li => li.getAttribute('data-id')).join(',');
-        fieldOrderInput.value = order;
-    }
+    const formDropdown = document.getElementById('gf_forms_dropdown');
+    const field1Dropdown = document.getElementById('gf_field_1_dropdown');
+    const field2Dropdown = document.getElementById('gf_field_2_dropdown');
+    const reorderFieldsList = document.getElementById('reorderFieldsList');
+    const fieldOrderInput = document.getElementById('field_order_input');
 
-    function getClosest(elem, selector) {
-        for (; elem && elem !== document; elem = elem.parentNode) {
-            if (elem.matches(selector)) return elem;
-        }
-        return null;
-    }
+    formDropdown.addEventListener('change', function() {
+        fetchFormFields(this.value);
+    });
 
-    function insertAfter(newNode, referenceNode) {
-        referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
-    }
-
-    // Fetch fields when form dropdown changes
     function fetchFormFields(formId) {
-        let request = new XMLHttpRequest();
-        request.open('POST', gf_accessibility.ajax_url, true);
-        request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded;');
-        request.onload = function() {
-            if (request.status >= 200 && request.status < 400) {
-                let response = JSON.parse(request.responseText);
-                if (response.success) {
-                    reorderFieldsList.innerHTML = '';
-                    response.data.forEach(field => {
-                        let li = document.createElement('li');
-                        li.setAttribute('data-id', field.id);
-                        li.innerHTML = `${field.label} 
-                            <button type='button' class='move-up'>Move Up</button> 
-                            <button type='button' class='move-down'>Move Down</button>`;
-                        reorderFieldsList.appendChild(li);
-                    });
-                    updateFieldOrder();
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', gf_accessibility.ajax_url, true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.onload = function() {
+            if (xhr.status >= 200 && xhr.status < 400) {
+                const resp = JSON.parse(xhr.responseText);
+                if (resp.success) {
+                    populateFieldsDropdown(resp.data);
+                    updateOrderPreview(resp.data);
                 } else {
-                    console.error(response.data);
+                    alert('Error fetching fields: ' + resp.data);
                 }
             } else {
-                console.error('Server error.');
+                alert('Server error. Please try again.');
             }
         };
-
-        request.send('action=fetch_form_fields&form_id=' + formId);
+        xhr.send(encodeURI('action=fetch_form_fields&form_id=' + formId));
     }
 
-    // Event listeners
-    formsDropdown.addEventListener('change', function(event) {
-        let selectedFormId = event.target.value;
-        fetchFormFields(selectedFormId);
-    });
+    function populateFieldsDropdown(fields) {
+        clearDropdown(field1Dropdown);
+        clearDropdown(field2Dropdown);
+        
+        fields.forEach(function(field) {
+            const option1 = document.createElement("option");
+            option1.value = field.id;
+            option1.textContent = field.label;
+            field1Dropdown.appendChild(option1);
 
-    reorderFieldsList.addEventListener('click', function(event) {
-        let li = getClosest(event.target, 'li');
-        if (event.target.classList.contains('move-up')) {
-            let prev = li.previousElementSibling;
-            if (prev) {
-                li.parentNode.insertBefore(li, prev);
-                updateFieldOrder();
-            }
-        } else if (event.target.classList.contains('move-down')) {
-            let next = li.nextElementSibling;
-            if (next) {
-                insertAfter(li, next);
-                updateFieldOrder();
-            }
+            const option2 = option1.cloneNode(true);
+            field2Dropdown.appendChild(option2);
+        });
+    }
+
+    function clearDropdown(dropdown) {
+        while (dropdown.firstChild) {
+            dropdown.removeChild(dropdown.firstChild);
         }
+    }
+
+    function updateOrderPreview(fields) {
+        while (reorderFieldsList.firstChild) {
+            reorderFieldsList.removeChild(reorderFieldsList.firstChild);
+        }
+
+        fields.forEach(function(field) {
+            const li = document.createElement("li");
+            li.dataset.id = field.id;
+            li.textContent = field.label;
+            reorderFieldsList.appendChild(li);
+        });
+
+        updateFieldOrderInput();
+    }
+
+    function updateFieldOrderInput() {
+        const ids = Array.from(reorderFieldsList.children).map(li => li.dataset.id).join(',');
+        fieldOrderInput.value = ids;
+    }
+
+    document.getElementById('move_above_btn').addEventListener('click', function() {
+        moveFields('above');
     });
 
-    // Initialize on page load
-    updateFieldOrder();
+    document.getElementById('move_below_btn').addEventListener('click', function() {
+        moveFields('below');
+    });
+
+    function moveFields(direction) {
+        const field1 = document.getElementById('gf_field_1_dropdown').value;
+        const field2 = document.getElementById('gf_field_2_dropdown').value;
+        
+        // Logic to move fields and updateOrderPreview() again.
+        // (You'll need to expand on this as per your requirements)
+
+        updateFieldOrderInput();
+    }
+
+    // Initial fetch to populate the fields on page load
+    if (formDropdown.value) {
+        fetchFormFields(formDropdown.value);
+    }
 });

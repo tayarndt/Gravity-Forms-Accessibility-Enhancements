@@ -1,3 +1,4 @@
+
 <?php
 /**
  * Plugin Name: Gravity Forms Accessibility Enhancements
@@ -18,13 +19,14 @@ if (!defined('ABSPATH')) {
 // Enqueue our JavaScript
 function gf_accessibility_enqueue_scripts($hook) {
     if ('toplevel_page_gf_accessibility' !== $hook) return;
-    wp_enqueue_script('gf-accessibility-js', plugin_dir_url(__FILE__) . 'js/accessibility.js', [], '1.0.0', true);
+    wp_enqueue_script('gf-accessibility-js', plugin_dir_url(__FILE__) . 'js/accessibility.js', ['jquery'], '1.0.0', true);
     wp_localize_script('gf-accessibility-js', 'gf_accessibility', ['ajax_url' => admin_url('admin-ajax.php')]);
 }
 add_action('admin_enqueue_scripts', 'gf_accessibility_enqueue_scripts');
 
 // Check if Gravity Forms is active
 if (class_exists('GFForms')) {
+
     add_action('admin_menu', 'gf_accessibility_add_menu');
 
     function gf_accessibility_add_menu() {
@@ -41,37 +43,47 @@ if (class_exists('GFForms')) {
 
     function gf_accessibility_render_submenu() {
         $forms = GFAPI::get_forms();
-        $selected_form_id = isset($_POST['selected_form_id']) ? absint($_POST['selected_form_id']) : $forms[0]['id'];
-        $selected_form = GFAPI::get_form($selected_form_id);
+
+        // Check if there are forms, else set a default value to avoid errors
+        $selected_form_id = isset($_POST['selected_form_id']) ? absint($_POST['selected_form_id']) : (!empty($forms) ? $forms[0]['id'] : 0);
 
         echo '<div class="wrap">';
         echo '<h1>Reorder Fields</h1>';
-
         echo '<form method="POST" action="">';
 
+        // Select Form
+        echo '<label>Select Form: </label>';
         echo '<select id="gf_forms_dropdown" name="selected_form_id">';
         foreach ($forms as $form) {
             $selected = ($form['id'] == $selected_form_id) ? 'selected' : '';
             echo "<option value='{$form['id']}' {$selected}>{$form['title']}</option>";
         }
-        echo '</select>';
+        echo '</select><br><br>';
 
+        // Field Dropdowns (to be populated by JavaScript based on AJAX call)
+        echo '<label>Field 1: </label>';
+        echo '<select id="gf_field_1_dropdown"></select><br><br>';
+
+        echo '<label>Field 2: </label>';
+        echo '<select id="gf_field_2_dropdown"></select><br><br>';
+
+        // Move Above and Move Below buttons
+        echo '<button type="button" id="move_above_btn">Move Above</button>';
+        echo '<button type="button" id="move_below_btn">Move Below</button><br><br>';
+
+        // Order Preview
+        echo '<h2>Order Preview:</h2>';
         echo '<ul id="reorderFieldsList">';
-        foreach ($selected_form['fields'] as $field) {
-            echo "<li data-id='{$field->id}'>{$field->label} 
-                  <button type='button' class='move-up'>Move Up</button> 
-                  <button type='button' class='move-down'>Move Down</button>
-                  </li>";
-        }
+        // This list will be populated by JS dynamically after fetching fields based on form selection
         echo '</ul>';
-        
+
         echo '<input type="hidden" name="field_order" id="field_order_input" value="">';  
         echo '<input type="submit" name="gf_reorder_fields" value="Save Order">';
         
         echo '</form>';
         echo '</div>';
     }
-
+    
     function gf_reorder_fields($form, $order) {
         $new_fields = [];
         foreach ($order as $field_id) {
