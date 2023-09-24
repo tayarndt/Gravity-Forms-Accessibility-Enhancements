@@ -1,10 +1,9 @@
-
 <?php
 /**
  * Plugin Name: Gravity Forms Accessibility Enhancements
  * Plugin URI: https://yourwebsite.com/gravity-forms-accessibility-enhancements
  * Description: An addon for Gravity Forms to enhance accessibility features and improve user experience.
- * Version: 1.0.0
+ * Version: 1.0.2
  * Author: Your Name
  * Author URI: https://yourwebsite.com
  * License: GPL-2.0+
@@ -32,7 +31,7 @@ if (class_exists('GFForms')) {
     function gf_accessibility_add_menu() {
         add_menu_page(
             'Accessibility Enhancements',
-            'Accessibility Enhancements',
+            ' GF    Accessibility Enhancements',
             'manage_options',
             'gf_accessibility',
             'gf_accessibility_render_submenu',
