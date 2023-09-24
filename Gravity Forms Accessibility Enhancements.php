@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Gravity Forms Accessibility Enhancements
- * Plugin URI: https://yourwebsite.com/gravity-forms-accessibility-enhancements
+ * Plugin URI: https://taylorarndt.com
  * Description: An addon for Gravity Forms to enhance accessibility features and improve user experience.
  * Version: 1.0.2
  * Author: Your Name
@@ -10,10 +10,96 @@
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain: gf-accessibility-enhancements
  */
+// Ensure that LicenseBridgeSDK class exists before initializing it
+require_once plugin_dir_path(__FILE__) . 'src/LicenseBridgeSDK.php';
+
+if (!class_exists('LicenseBridge\WordPressSDK\LicenseBridgeSDK')) {
+    add_action('admin_notices', function() {
+        ?>
+        <div class="notice notice-error">
+            <p><?php _e('LicenseBridgeSDK class is missing. Please check your installation.', 'your-text-domain'); ?></p>
+        </div>
+        <?php
+    });
+    return;
+}
+
+use LicenseBridge\WordPressSDK\LicenseBridgeSDK;
+
+// Initialize SDK
+function gf_accessibility_license() {
+    static $instance = null;
+
+    if (null === $instance) {
+        $instance = new LicenseBridgeSDK('https://licensebridge.com/market/gravity-forms-accessibility-enhancements');
+    }
+
+    return $instance;
+}
+
+// Add settings menu
+function gf_accessibility_add_settings_menu() {
+    add_options_page(
+        __('GF Accessibility Settings', 'your-text-domain'),
+        __('GF Accessibility', 'your-text-domain'),
+        'manage_options',
+        'gf_accessibility_settings',
+        'gf_accessibility_render_settings_page'
+    );
+}
+add_action('admin_menu', 'gf_accessibility_add_settings_menu');
+
+// Render settings page
+function gf_accessibility_render_settings_page() {
+    if (!current_user_can('manage_options')) {
+        wp_die(__('You do not have sufficient permissions to access this page.', 'your-text-domain'));
+    }
+
+    // Save and verify license key when form is submitted
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        check_admin_referer('gf_accessibility_settings_save', 'gf_accessibility_settings_nonce');
+        
+        $license_key = sanitize_text_field($_POST['gf_accessibility_license_key'] ?? '');
+        update_option('gf_accessibility_license_key', $license_key);
+        
+        $license_status = gf_accessibility_license()->is_license_active('gravity-forms-accessibility-enhancements') ? 'active' : 'inactive';
+        set_transient('gf_accessibility_license_status', $license_status, HOUR_IN_SECONDS);
+    }
+
+    $license_key = get_option('gf_accessibility_license_key', '');
+    $license_status = get_transient('gf_accessibility_license_status') ?: 'inactive';
+
+    ?>
+    <div class="wrap">
+        <h2><?php _e('GF Accessibility Settings', 'your-text-domain'); ?></h2>
+        <form method="POST" action="">
+            <?php wp_nonce_field('gf_accessibility_settings_save', 'gf_accessibility_settings_nonce'); ?>
+            
+            <table class="form-table" role="presentation">
+                <tr>
+                    <th scope="row"><label for="gf_accessibility_license_key"><?php _e('License Key', 'your-text-domain'); ?></label></th>
+                    <td>
+                        <input name="gf_accessibility_license_key" type="text" id="gf_accessibility_license_key" value="<?php echo esc_attr($license_key); ?>" class="regular-text">
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php _e('License Status', 'your-text-domain'); ?></th>
+                    <td><?php echo esc_html(ucfirst($license_status)); ?></td>
+                </tr>
+            </table>
+            
+            <?php submit_button(__('Save Settings', 'your-text-domain')); ?>
+        </form>
+    </div>
+    <?php
+}
 
  if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
+
+// Include the settings file
+include_once plugin_dir_path(__FILE__) . 'settings.php';
 
 // Enqueue our JavaScript
 function gf_accessibility_enqueue_scripts($hook) {
