@@ -45,39 +45,42 @@ if (class_exists('GFForms')) {
     function gf_accessibility_render_submenu() {
         $forms = GFAPI::get_forms();
         $selected_form_id = isset($_POST['selected_form_id']) ? absint($_POST['selected_form_id']) : (!empty($forms) ? $forms[0]['id'] : 0);
-
+    
         echo '<div class="wrap">';
         echo '<h1>Reorder Fields</h1>';
         echo '<form method="POST" action="">';
-        echo '<label>Select Form: </label>';
+        
+        // Associating Label with Select Element
+        echo '<label for="gf_forms_dropdown">Select Form: </label>';
         echo '<select id="gf_forms_dropdown" name="selected_form_id">';
         foreach ($forms as $form) {
             $selected = ($form['id'] == $selected_form_id) ? 'selected' : '';
             echo "<option value='{$form['id']}' {$selected}>{$form['title']}</option>";
         }
         echo '</select><br><br>';
-
-        // Updated Field Dropdowns to Target and Destination
-        echo '<label>Target: </label>';
+    
+        // Associating Label with Target Dropdown
+        echo '<label for="gf_target_dropdown">Target: </label>';
         echo '<select id="gf_target_dropdown"></select><br><br>';
-
-        echo '<label>Destination: </label>';
+    
+        // Associating Label with Destination Dropdown
+        echo '<label for="gf_destination_dropdown">Destination: </label>';
         echo '<select id="gf_destination_dropdown"></select><br><br>';
-
+    
         // Updated button labels to reflect moving target to destination
         echo '<button type="button" id="move_above_btn">Move Target Above Destination</button>';
         echo '<button type="button" id="move_below_btn">Move Target Below Destination</button><br><br>';
-
+    
         echo '<h2>Order Preview:</h2>';
         echo '<ul id="reorderFieldsList"></ul>';
-
+    
         echo '<input type="hidden" name="field_order" id="field_order_input" value="">';
         echo '<input type="submit" name="gf_reorder_fields" value="Save Order">';
-
+    
         echo '</form>';
         echo '</div>';
     }
-    function gf_reorder_fields($form, $order) {
+        function gf_reorder_fields($form, $order) {
         $new_fields = [];
         foreach ($order as $field_id) {
             foreach ($form['fields'] as $field) {
