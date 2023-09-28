@@ -1,14 +1,26 @@
-document.addEventListener("DOMContentLoaded", function() {
-
+document.addEventListener("DOMContentLoaded", function () {
     const formDropdown = document.getElementById('gf_forms_dropdown');
-    const field1Dropdown = document.getElementById('gf_field_1_dropdown');
-    const field2Dropdown = document.getElementById('gf_field_2_dropdown');
+    const field1Dropdown = document.getElementById('gf_target_dropdown');
+    const field2Dropdown = document.getElementById('gf_destination_dropdown');
     const reorderFieldsList = document.getElementById('reorderFieldsList');
     const fieldOrderInput = document.getElementById('field_order_input');
+    const moveAboveBtn = document.getElementById('move_above_btn');
+    const moveBelowBtn = document.getElementById('move_below_btn');
 
     formDropdown.addEventListener('change', function() {
         fetchFormFields(this.value);
     });
+
+    moveAboveBtn.addEventListener('click', function() {
+        moveFields('above');
+    });
+
+    moveBelowBtn.addEventListener('click', function() {
+        moveFields('below');
+    });
+
+    field1Dropdown.addEventListener('change', updateButtonLabels);
+    field2Dropdown.addEventListener('change', updateButtonLabels);
 
     function fetchFormFields(formId) {
         const xhr = new XMLHttpRequest();
@@ -20,6 +32,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 if (resp.success) {
                     populateFieldsDropdown(resp.data);
                     updateOrderPreview(resp.data);
+                    updateButtonLabels(); // Update button labels when the fields are fetched
                 } else {
                     alert('Error fetching fields: ' + resp.data);
                 }
@@ -33,7 +46,7 @@ document.addEventListener("DOMContentLoaded", function() {
     function populateFieldsDropdown(fields) {
         clearDropdown(field1Dropdown);
         clearDropdown(field2Dropdown);
-        
+
         fields.forEach(function(field) {
             const optionLabel = `${field.label} (${field.type})`;
             const option1 = document.createElement("option");
@@ -49,6 +62,14 @@ document.addEventListener("DOMContentLoaded", function() {
         while (dropdown.firstChild) {
             dropdown.removeChild(dropdown.firstChild);
         }
+    }
+
+    function updateButtonLabels() {
+        const selectedField1 = field1Dropdown.options[field1Dropdown.selectedIndex].text;
+        const selectedField2 = field2Dropdown.options[field2Dropdown.selectedIndex].text;
+
+        moveAboveBtn.textContent = `Move ${selectedField1} Above ${selectedField2}`;
+        moveBelowBtn.textContent = `Move ${selectedField1} Below ${selectedField2}`;
     }
 
     function updateOrderPreview(fields) {
@@ -68,9 +89,9 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function moveFields(direction) {
-        const field1 = document.getElementById('gf_field_1_dropdown').value;
-        const field2 = document.getElementById('gf_field_2_dropdown').value;
-        
+        const field1 = field1Dropdown.value;
+        const field2 = field2Dropdown.value;
+
         const field1Li = Array.from(reorderFieldsList.children).find(li => li.dataset.id === field1);
         const field2Li = Array.from(reorderFieldsList.children).find(li => li.dataset.id === field2);
 
@@ -95,14 +116,6 @@ document.addEventListener("DOMContentLoaded", function() {
         const ids = Array.from(reorderFieldsList.children).map(li => li.dataset.id).join(',');
         fieldOrderInput.value = ids;
     }
-
-    document.getElementById('move_above_btn').addEventListener('click', function() {
-        moveFields('above');
-    });
-
-    document.getElementById('move_below_btn').addEventListener('click', function() {
-        moveFields('below');
-    });
 
     // Initial fetch to populate the fields on page load
     if (formDropdown.value) {
