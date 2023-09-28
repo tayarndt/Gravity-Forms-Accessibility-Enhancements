@@ -3,9 +3,9 @@
  * Plugin Name: Gravity Forms Accessibility Enhancements
  * Plugin URI: https://yourwebsite.com/gravity-forms-accessibility-enhancements
  * Description: An addon for Gravity Forms to enhance accessibility features and improve user experience.
- * Version: 1.0.2
- * Author: Your Name
- * Author URI: https://yourwebsite.com
+ * Version: 1.0.3
+ * Author: Taylor Arndt
+ * Author URI: https://taylorarndt.com
  * License: GPL-2.0+
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain: gf-accessibility-enhancements
@@ -28,19 +28,31 @@ if (class_exists('GFForms')) {
 
     add_action('admin_menu', 'gf_accessibility_add_menu');
 
-    function gf_accessibility_add_menu() {
-        add_menu_page(
-            'Accessibility Enhancements',
-            ' GF    Accessibility Enhancements',
-            'manage_options',
-            'gf_accessibility',
-            'gf_accessibility_render_submenu',
-            'dashicons-forms',
-            3
-        );
-    }
-    // add the action
-    add_action('admin_menu', 'gf_accessibility_add_menu');
+    include_once 'settings.php'; // Including settings.php file where settings related functions are defined.
+
+function gf_accessibility_add_menu() {
+    $parent_slug = 'gf_accessibility';
+    
+    add_menu_page(
+        'Accessibility Enhancements',
+        'GF Accessibility Enhancements',
+        'manage_options',
+        $parent_slug,
+        'gf_accessibility_render_submenu', // This should match the actual function that renders the content of the main menu page.
+        'dashicons-forms',
+        3
+    );
+
+    add_submenu_page(
+        $parent_slug, 
+        'Settings', 
+        'Settings', 
+        'manage_options', 
+        'gf_accessibility_settings', 
+        'gf_accessibility_render_settings_submenu' // This should match the actual function that renders the content of the settings page.
+    );
+}
+add_action('admin_menu', 'gf_accessibility_add_menu'); // Adding the action to create menu and submenu in the admin panel.
 
     function gf_accessibility_render_submenu() {
         $forms = GFAPI::get_forms();
@@ -76,6 +88,7 @@ if (class_exists('GFForms')) {
     
         echo '</div>';
     }
+
         function gf_reorder_fields($form, $order) {
         $new_fields = [];
         foreach ($order as $field_id) {

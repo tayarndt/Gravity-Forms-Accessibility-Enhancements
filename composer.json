@@ -1,0 +1,14 @@
+{
+    "name": "vendor/gf-accessibility-enhancements",
+    "description": "A WordPress plugin to add accessibility enhancements to Gravity Forms.",
+    "type": "wordpress-plugin",
+    "require": {
+        "stripe/stripe-php": "^12.4",
+        "vlucas/phpdotenv": "^5.5"
+    },
+    "authors": [
+        {
+            "name": "Taylor Arndt"
+        }
+    ]
+}

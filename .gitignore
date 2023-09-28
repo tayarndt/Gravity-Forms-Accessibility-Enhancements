@@ -1,0 +1,7 @@
+location ~ /\.env {
+    deny all;
+}
+
+location ~ /vendor {
+    deny all;
+}
